@@ -1,0 +1,165 @@
+Describir en lenguaje natural, pre y post condiciones, seudocódigo de las operaciones y análisis
+de ordenes de las siguientes operaciones del Trie y NodoTrie:
+
+
+1. Operación buscar palabra completa.
+
+Lenguaje natural: Recorre el Trie carácter por carácter siguiendo los hijos del nodo actual. Si en algún momento el carácter no existe como hijo, la palabra no está. Si se llega al final de la cadena, se verifica que el nodo sea marcado como "fin de palabra".
+
+Precondición: El Trie está inicializado (puede estar vacío). La palabra a buscar es una cadena no nula.
+Postcondición: Devuelve el dato asociado si la palabra existe y es completa; null si no existe o es solo prefijo de otra.
+
+
+En la clase NodoTrie:
+
+buscar(unaPalabra):                            // O(n) en total
+    nodoActual <- this                         // O(1)
+    Para cada carácter car de unaPalabra hacer // O(n) iteraciones
+      unHijo <- nodoActual.obtenerHijo(car)    // O(1)
+      Si unHijo es nulo entonces               // O(1)
+        devolver nulo                          // O(1)
+      Sino
+        nodoActual <- unHijo                   // O(1)
+      FinSi
+    FinPara
+    Si nodoActual.esFinDePalabra entonces      // O(1)
+      devolver nodoActual                      // O(1)
+    Sino
+      devolver nulo                            // O(1)
+    FinSi
+
+
+En la clase Trie:
+
+buscar(unaPalabra):                   // O(n) en total
+    nodo <- raiz.buscar(unaPalabra)   // O(n)
+    Si nodo es nulo entonces          // O(1)
+      devolver nulo                   // O(1)
+    Sino
+      devolver nodo.dato              // O(1)
+    FinSi
+
+
+
+2. Obtener la lista de palabras por un prefijo dado.
+
+Lenguaje natural: Primero navega el nodo carácter por carácter hasta el nodo que representa el último carácter del prefijo. Si en algún paso falta un hijo, retorna lista vacía. Una vez ubicado el nodo del prefijo, llama al auxiliar recolectar que recorre en profundidad todo el subárbol desde ese nodo, acumulando cada palabra completa que encuentra junto a su dato.
+
+Pre: prefijo no es nulo. Puede ser cadena vacía, en cuyo caso lista todas las palabras del subárbol.
+
+Post: Retorna una lista de pares (palabra, dato) con todas las palabras que comienzan con el prefijo dado. La lista puede estar vacía si ninguna palabra lo tiene.
+
+
+En la clase NodoTrie:
+
+O(n + k) donde m = longitud del prefijo
+k = total de caracteres en todas las palabras del subárbol
+
+
+listarPorPrefijo(prefijo):                         // O(n + k) en total
+    nodoActual <- this                             // O(1)
+    Para cada carácter car de prefijo hacer        // O(n) iteraciones
+      unHijo <- nodoActual.obtenerHijo(car)        // O(1)
+      Si unHijo es nulo entonces                   // O(1)
+        devolver lista vacía                       // O(1)
+      Sino
+        nodoActual <- unHijo                       // O(1)
+      FinSi
+    FinPara
+    resultados <- nueva Lista vacía                // O(1)
+    nodoActual.recolectar(prefijo, resultados)     // O(k)
+    devolver resultados                            // O(1)
+
+recolectar(acumulado, resultados):                 // O(k) en total
+    Si esFinDePalabra entonces                     // O(1)
+      resultados.agregar((acumulado, dato))        // O(1)
+    FinSi
+    Para cada (car, hijo) en hijos hacer           // O(k) entre todas las llamadas
+      hijo.recolectar(acumulado + car, resultados) // O(1) por llamada
+    FinPara
+
+
+En la clase Trie:
+
+listarPorPrefijo(prefijo):                  // O(n + k) en total
+    devolver raiz.listarPorPrefijo(prefijo) // O(n + k)
+
+
+
+3. Insertar una palabra con un dato asociado.
+
+Lenguaje natural: El nodo se recorre a sí mismo carácter por carácter. Por cada carácter, si no existe un hijo con esa clave lo crea. Al terminar de recorrer todos los caracteres, marca el nodo final como fin de palabra y le asigna el dato. Si la palabra ya existía, sobreescribe el dato.
+
+Pre: unaPalabra no es nulo y tiene longitud mayor o igual a 1. unDato puede ser cualquier valor de tipo T.
+
+Post: Todos los nodos del camino existen. El nodo correspondiente al último carácter tiene esFinDePalabra = verdadero y dato = unDato.
+
+
+En la clase NodoTrie:  
+
+insertar(unaPalabra, unDato):                      // O(n) en total
+    nodoActual <- this                             // O(1)
+    Para cada carácter car de unaPalabra hacer     // O(n) iteraciones
+      unHijo <- nodoActual.obtenerHijo(car)        // O(1)
+      Si unHijo es nulo entonces                   // O(1)
+        unHijo <- nodoActual.agregarHijo(car)      // O(1)
+      FinSi
+      nodoActual <- unHijo                         // O(1)
+    FinPara
+    nodoActual.esFinDePalabra <- verdadero         // O(1)
+    nodoActual.dato           <- unDato            // O(1)
+
+
+En la clase Trie:
+
+insertar(unaPalabra, unDato):                      // O(n) en total
+    Si raiz.buscar(unaPalabra) es nulo entonces    // O(n)
+      tamaño <- tamaño + 1                         // O(1)
+    FinSi
+    raiz.insertar(unaPalabra, unDato)              // O(n)
+
+
+
+4. Eliminar una palabra del Trie
+
+
+Lenguaje natural: Avanza recursivamente carácter por carácter usando nivel como índice. Al llegar al nivel igual a la longitud de la palabra, verifica que el nodo sea fin de palabra; si no lo es, la palabra no existía. Si lo es, desmarca esFinDePalabra. En el retorno de cada llamada recursiva, si el hijo procesado quedó huérfano (sin hijos propios y sin ser fin de otra palabra), lo elimina del mapa. Así se limpian hacia arriba solo los nodos que no forman parte de ninguna otra palabra.
+
+Pre: unaPalabra no es nulo. nivel está en el rango [0, longitud(unaPalabra)]. Al invocarlo desde Trie, siempre se llama con nivel = 0.
+
+Post: Si la palabra existía, su nodo final tiene esFinDePalabra = falso y dato = nulo. Los nodos que quedaron huérfanos son eliminados. Si la palabra no existía, el Trie no se modifica. Retorna verdadero si el nodo que ejecutó el método debe ser eliminado por su padre, falso en caso contrario.
+
+
+En la clase NodoTrie: 
+
+eliminar(unaPalabra, nivel):                           // O(n) en total
+    Si nivel = longitud(unaPalabra) entonces            // O(1)
+      Si no esFinDePalabra entonces                    // O(1)
+        devolver falso                                 // O(1)
+      FinSi
+      esFinDePalabra <- falso                          // O(1)
+      dato           <- nulo                           // O(1)
+      devolver esHoja()                                // O(1)
+    FinSi
+    car    <- unaPalabra[nivel]                        // O(1)
+    unHijo <- obtenerHijo(car)                         // O(1)
+    Si unHijo es nulo entonces                         // O(1)
+      devolver falso                                   // O(1)
+    FinSi
+    debeEliminar <- unHijo.eliminar(unaPalabra, nivel+1) // O(n) recursivo
+    Si debeEliminar entonces                           // O(1)
+      eliminarHijo(car)                               // O(1)
+      devolver esHoja() y no esFinDePalabra           // O(1)
+    FinSi
+    devolver falso                                     // O(1)
+
+
+En la clase Trie:
+
+eliminar(unaPalabra):                          // O(n) en total
+    eliminado <- raiz.eliminar(unaPalabra, 0)  // O(n)
+    Si eliminado entonces                      // O(1)
+      tamaño <- tamaño - 1                     // O(1)
+    FinSi
+    devolver eliminado                         // O(1)
+
